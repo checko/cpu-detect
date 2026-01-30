@@ -74,11 +74,10 @@ class CpuDetector:
         """
         implementer_or_vendor, part_or_model = key
 
-        # Check if this is an ARM CPU (part starts with 0x and is 4 chars)
+        # Check if this is an ARM CPU (part starts with 0x and is 5 chars like 0xd03)
         if (isinstance(part_or_model, str) and
             part_or_model.startswith('0x') and
-            len(part_or_model) == 4):
-
+            len(part_or_model) == 5):
             return self._identify_arm_cpu(implementer_or_vendor, part_or_model, count)
         else:
             return self._identify_x86_cpu(implementer_or_vendor, part_or_model, count)
