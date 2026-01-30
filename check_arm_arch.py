@@ -78,28 +78,34 @@ def get_cpu_architecture():
             part = None
             vendor_id = None
             model_name = None
+            has_cpuinfo = False
 
             for line in f:
                 line = line.strip()
                 if not line:
-                    # End of a processor block
-                    if implementer and part:
-                        key = (implementer, part)
-                        if key not in cpus_found:
-                            cpus_found[key] = 0
-                        cpus_found[key] += 1
-                    elif vendor_id and model_name:
-                        key = (vendor_id, model_name)
-                        if key not in cpus_found:
-                            cpus_found[key] = 0
-                        cpus_found[key] += 1
-                    is_arm = False
-                    is_x86 = False
-                    implementer = None
-                    part = None
-                    vendor_id = None
-                    model_name = None
+                    # Empty line - finalize the current CPU entry if we have one
+                    if has_cpuinfo:
+                        if is_arm and implementer and part:
+                            key = (implementer, part)
+                            if key not in cpus_found:
+                                cpus_found[key] = 0
+                            cpus_found[key] += 1
+                        elif is_x86 and vendor_id and model_name:
+                            key = (vendor_id, model_name)
+                            if key not in cpus_found:
+                                cpus_found[key] = 0
+                            cpus_found[key] += 1
+                        # Reset for next entry
+                        is_arm = False
+                        is_x86 = False
+                        implementer = None
+                        part = None
+                        vendor_id = None
+                        model_name = None
+                        has_cpuinfo = False
                     continue
+
+                has_cpuinfo = True
 
                 if line.startswith('CPU implementer'):
                     is_arm = True
@@ -120,16 +126,17 @@ def get_cpu_architecture():
                     model_name = line.split(':', 1)[1].strip()
 
             # Catch last block if file doesn't end with newline
-            if implementer and part:
-                key = (implementer, part)
-                if key not in cpus_found:
-                    cpus_found[key] = 0
-                cpus_found[key] += 1
-            elif vendor_id and model_name:
-                key = (vendor_id, model_name)
-                if key not in cpus_found:
-                    cpus_found[key] = 0
-                cpus_found[key] += 1
+            if has_cpuinfo:
+                if is_arm and implementer and part:
+                    key = (implementer, part)
+                    if key not in cpus_found:
+                        cpus_found[key] = 0
+                    cpus_found[key] += 1
+                elif is_x86 and vendor_id and model_name:
+                    key = (vendor_id, model_name)
+                    if key not in cpus_found:
+                        cpus_found[key] = 0
+                    cpus_found[key] += 1
 
     except FileNotFoundError:
         print("Error: /proc/cpuinfo not found. Is this a Linux system?")
@@ -140,29 +147,34 @@ def get_cpu_architecture():
 
     for key, count in cpus_found.items():
         if isinstance(key, tuple) and len(key) == 2:
-            # ARM CPU
+            # Check if it's ARM (contains hex part number like 0xd03)
             imp, part = key
-            if imp in arm_cpu_db and part in arm_cpu_db[imp]:
-                model, arch = arm_cpu_db[imp][part]
-                print(f"{count:<12} {imp:<20} {part:<10} {model:<30} {arch}")
+            if isinstance(part, str) and part.startswith('0x') and len(part) == 4:
+                # ARM CPU
+                if imp in arm_cpu_db and part in arm_cpu_db[imp]:
+                    model, arch = arm_cpu_db[imp][part]
+                    print(f"{count:<12} {imp:<20} {part:<10} {model:<30} {arch}")
+                else:
+                    model = "Unknown"
+                    arch = "Unknown (AArch64)"
+                    print(f"{count:<12} {imp:<20} {part:<10} {model:<30} {arch}")
             else:
-                model = "Unknown"
-                arch = "Unknown (AArch64)"
-                print(f"{count:<12} {imp:<20} {part:<10} {model:<30} {arch}")
+                # x86 CPU (vendor_id and model_name)
+                vendor_id, model_name = key
+                architecture = "x86_64"
+
+                # Try to match model name
+                matched_model = "Unknown"
+                if vendor_id in x86_cpu_db:
+                    for prefix, _ in x86_cpu_db[vendor_id]:
+                        if prefix.lower() in model_name.lower():
+                            matched_model = prefix
+                            break
+
+                print(f"{count:<12} {vendor_id:<20} {model_name:<30} {architecture}")
         else:
-            # x86 CPU
-            vendor_id, model_name = key
-            architecture = "x86_64"
-
-            # Try to match model name
-            matched_model = "Unknown"
-            if vendor_id in x86_cpu_db:
-                for prefix, _ in x86_cpu_db[vendor_id]:
-                    if prefix.lower() in model_name.lower():
-                        matched_model = prefix
-                        break
-
-            print(f"{count:<12} {vendor_id:<20} {model_name:<30} {architecture}")
+            # Fallback for single value keys
+            print(f"{count:<12} {str(key):<20} {'Unknown':<10} {'Unknown':<30} {'Unknown'}")
 
 if __name__ == "__main__":
     get_cpu_architecture()
