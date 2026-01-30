@@ -1,6 +1,6 @@
 # CPU Architecture Detection Tool
 
-A modular Python tool for identifying host CPU architecture and family on Linux systems.
+A modular Python tool for identifying host CPU architecture and family on Linux and Windows systems.
 
 ## Features
 
@@ -37,7 +37,7 @@ Core Count   Vendor/Implementer   Model                          Architecture
 ## Requirements
 
 - Python 3.6+
-- Linux operating system (access to `/proc/cpuinfo`)
+- Linux or Windows operating system
 
 ## Supported CPUs
 
@@ -55,8 +55,8 @@ Core Count   Vendor/Implementer   Model                          Architecture
 ## Error Handling
 
 The tool includes comprehensive error handling for:
-- Non-Linux platforms
-- Missing `/proc/cpuinfo`
+- Unsupported platforms
+- Missing system files or commands
 - Malformed CPU information
 - Unknown CPU models
 

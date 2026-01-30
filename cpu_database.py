@@ -104,7 +104,7 @@ class X86CpuDatabase:
 
         Args:
             vendor_id: CPU vendor ID
-            model_name: Full model name from cpuinfo
+            model_name: Full model name from cpuinfo or Windows
 
         Returns:
             Matching model prefix or None
@@ -116,5 +116,17 @@ class X86CpuDatabase:
         for prefix, _ in self._db[vendor_id]:
             if prefix.lower() in model_name_lower:
                 return prefix
+
+        # Additional checks for Windows-specific naming
+        if vendor_id == 'GenuineIntel':
+            intel_keywords = ['core i3', 'core i5', 'core i7', 'core i9', 'xeon', 'atom', 'celeron']
+            for keyword in intel_keywords:
+                if keyword in model_name_lower:
+                    return keyword.title() if 'core' in keyword else keyword.title()
+        elif vendor_id == 'AuthenticAMD':
+            amd_keywords = ['ryzen', 'phenom', 'athlon', 'epyc', 'a-series']
+            for keyword in amd_keywords:
+                if keyword in model_name_lower:
+                    return keyword.title()
 
         return None
