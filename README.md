@@ -47,8 +47,8 @@ Core Count   Vendor/Implementer   Model                          Architecture
 No installation required! Just clone the repository and run the script:
 
 ```bash
-git clone <repository-url>
-cd cpu-detection-tool
+git clone https://github.com/checko/cpu-detect.git
+cd cpu-detect
 python3 check_arm_arch.py
 ```
 
@@ -87,6 +87,19 @@ To add support for new CPU models:
 1. Update the appropriate database class in `cpu_database.py`
 2. Add new entries to the database dictionaries
 3. Test with your specific CPU model
+
+## Project Structure
+
+```
+cpu-detect/
+├── .gitignore              # Python .gitignore rules
+├── README.md               # This documentation
+├── check_arm_arch.py       # Main entry point script
+├── cpu_database.py         # CPU model databases (ARM & x86)
+├── cpu_detector.py         # CPU detection orchestration
+├── cpuinfo_parser.py       # Cross-platform CPU info parsing
+└── output_formatter.py     # Output formatting and display
+```
 
 ## License
 
